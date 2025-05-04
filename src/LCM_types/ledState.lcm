@@ -1,0 +1,6 @@
+package my_types;
+
+struct ledState {
+    int8_t intensity;
+    boolean isOn;
+}

@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/bridge.dir/src/bridge.cpp.o -o bridge  -llcm -lgthread-2.0 -lglib-2.0 

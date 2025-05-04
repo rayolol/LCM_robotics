@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/publisher.dir/src/publisher.cpp.o -o publisher  -llcm 

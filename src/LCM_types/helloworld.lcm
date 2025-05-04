@@ -1,0 +1,6 @@
+package my_types;
+
+struct example {
+    string name;
+    int32_t id;
+}
