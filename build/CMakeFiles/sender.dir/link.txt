@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/sender.dir/src/sender.cpp.o -o sender  -llcm -lgthread-2.0 -lglib-2.0 

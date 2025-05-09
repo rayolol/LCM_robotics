@@ -1,0 +1,18 @@
+#general
+*.log
+*pyc
+__pycache__/
+
+#PlatformIO
+client/ .pio/
+client/ .vscode/
+
+
+# CMake
+sever/ .vscode/
+server/build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+

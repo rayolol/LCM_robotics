@@ -1,4 +1,0 @@
-/home/alex/LCM_robotics/build/CMakeFiles/sender.dir
-/home/alex/LCM_robotics/build/CMakeFiles/bridge.dir
-/home/alex/LCM_robotics/build/CMakeFiles/edit_cache.dir
-/home/alex/LCM_robotics/build/CMakeFiles/rebuild_cache.dir
