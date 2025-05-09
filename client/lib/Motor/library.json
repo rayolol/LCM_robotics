@@ -1,0 +1,25 @@
+{
+    "name": "Motor",
+    "version": "1.0.0",
+    "description": "Motor control library for LCM robotics",
+    "keywords": "motor, stepper, control",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/yourusername/LCM_robotics.git"
+    },
+    "authors": [
+        {
+            "name": "Alexis",
+            "email": "your.email@example.com",
+            "maintainer": true
+        }
+    ],
+    "license": "MIT",
+    "dependencies": {
+        "AccelStepper": "*",
+        "br3ttb/PID": "*",
+        "Encoder": "*"
+    },
+    "frameworks": "arduino",
+    "platforms": "espressif32"
+}

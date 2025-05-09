@@ -1,0 +1,23 @@
+{
+    "name": "Encoder",
+    "version": "1.0.0",
+    "description": "Encoder library for LCM robotics",
+    "keywords": "encoder, as5600",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/yourusername/LCM_robotics.git"
+    },
+    "authors": [
+        {
+            "name": "Alexis",
+            "email": "your.email@example.com",
+            "maintainer": true
+        }
+    ],
+    "license": "MIT",
+    "dependencies": {
+        "robtillaart/AS5600": "*"
+    },
+    "frameworks": "arduino",
+    "platforms": "espressif32"
+}
