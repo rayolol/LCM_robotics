@@ -1,18 +1,21 @@
-#general
+# General
 *.log
-*pyc
+*.pyc
 __pycache__/
 
-#PlatformIO
-client/ .pio/
-client/ .vscode/
-
+# PlatformIO
+client/.pio/
+client/.vscode/
 
 # CMake
-sever/ .vscode/
+server/.vscode/
 server/build/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+
+# Other
+.DS_Store
+Thumbs.db
 
