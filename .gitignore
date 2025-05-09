@@ -1,6 +1,7 @@
 # General
 *.log
 *.pyc
+.vscode/
 __pycache__/
 
 # PlatformIO
