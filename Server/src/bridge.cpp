@@ -1,5 +1,5 @@
 #include <lcm/lcm-cpp.hpp>
-#include "my_types/ledState.hpp"
+#include "LCM_types/Angles/MotorCommand.hpp"
 
 #include <arpa/inet.h> //for inet_addr
 #include <sys/socket.h>
@@ -37,12 +37,35 @@ public:
     void handleMessage(
         const lcm::ReceiveBuffer* buff, 
         const std::string& channel, 
-        const my_types::ledState* msg 
+        const Angles::MotorCommand* msg 
     ) {
         std::cout << "received angles on channel: " << channel << std::endl;
-        uint8_t value = msg->isOn ? 1 : 0;
-        sendto(sockfd, &value , sizeof(bool), 0,
+        uint8_t buffer[56];
+        float angles[6];
+        float target_speed[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+        for(int i = 0; i < 6; i++) {
+            std::cout << msg->target_angles[i] << "\n";
+            angles[i] = msg->target_angles[i];
+        }
+        int64_t timestamp = htobe64(msg->timestamp);
+        size_t offest = 0;
+
+        memcpy(buffer + offest, &timestamp, sizeof(int64_t));
+        offest += sizeof(int64_t);
+        memcpy(buffer + offest, angles, sizeof(float) * 6);
+        offest += sizeof(float) * 6;
+        memcpy(buffer + offest, target_speed, sizeof(float) * 6);
+        offest += sizeof(float) * 6;
+
+        std::cout << "sending angles to ESP32" << std::endl;
+        size_t n = sendto(sockfd, buffer , offest , 0,
          (const struct sockaddr*)&servaddr, sizeof(servaddr));
+        printf("sent %zu bytes\n", n);
+        if (n < 0) {
+            perror("sendto");
+            exit(EXIT_FAILURE);
+        }
     }
 };
 
@@ -55,7 +78,7 @@ int main() {
 
     Handler handler("192.168.0.158", 12345); //change later for corresponding ESP32 port and IP
 
-    lcm.subscribe("ledState", &Handler::handleMessage, &handler);
+    lcm.subscribe("MotorAngles", &Handler::handleMessage, &handler);
 
     while(0 == lcm.handle());
 

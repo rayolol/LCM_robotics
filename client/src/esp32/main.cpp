@@ -29,6 +29,8 @@
 #define STEPPIN_6 21
 #define DIRPIN_6 23
 
+#define ENPIN 22
+
 #define stepRev 1600
 
 const char* ssid = "TP-LINK_A3B2AE";
@@ -170,6 +172,8 @@ void setup() {
   Serial.begin(115200);
   delay(1000); // Give serial time to initialize
   Serial.println("\n\nESP32 Starting up...");
+  pinMode(ENPIN, OUTPUT);
+  digitalWrite(ENPIN, HIGH); // Enable motor driver
 
   // Initialize WiFi with timeout
   Serial.printf("Connecting to WiFi network: %s\n", ssid);
@@ -210,7 +214,7 @@ void setup() {
     NULL,                // Task input parameter
     2,                   // Priority
     &updateMotorTaskHandle, // Task handle
-    0                    // Core 0
+    1                    // Core 0
   );
   
   // Create packet parsing task on core 1
@@ -222,17 +226,13 @@ void setup() {
     NULL,                // Task input parameter
     1,                   // Priority
     &ParsePacketTaskHandle, // Task handle
-    1                    // Core 1
+    0                    // Core 1
   );
   
   Serial.println("Setup complete!");
 }
 
 void loop() {
-  vTaskDelay(pdMS_TO_TICKS(2000));
-  // Debug task stack usage (optional)
-  UBaseType_t highWater = uxTaskGetStackHighWaterMark(NULL);
-  Serial.printf("Loop Task Stack high water mark: %d\n", highWater);
 }
 
 
