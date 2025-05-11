@@ -1,0 +1,8 @@
+package Angles;
+
+struct MotorCommand {
+
+    int64_t timestamp;
+    float target_angles[6];
+
+}
