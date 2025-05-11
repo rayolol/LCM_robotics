@@ -7,10 +7,47 @@
 #include <SPI.h>
 #define SS 5
 
+//MOTOR 1 ROLL AXIS                     REFENCE ARDUINO PIN
+#define STEPPIN_1 33 // BLACK <-YELLOW <- D5
+#define DIRPIN_1 32 //GREEN <- YELLOW <- D2
+
+//MOTOR 2 DIFFERENTIAL RIGHT
+#define STEPPIN_2 26 // BLACK <-ORANGE <- D6
+#define DIRPIN_2 25 // GREEN <- ORANGE <- D3
+
+//MOTOR 3 DIFFERENTIAL LEFT
+#define STEPPIN_3 14 // BLACK <-GREEN <- D7
+#define DIRPIN_3 12 // GREEN <- GREEN <- D4
+
+//MOTOR 4 ELBOW
+#define STEPPIN_4 34 // BLUE
+#define DIRPIN_4 35 //GREEN
+
+//MOTOR 5 SHOULDER
+#define STEPPIN_5 18 // BLUE
+#define DIRPIN_5 19 // GREEN
+
+//MOTOR 6 BASE
+#define STEPPIN_6 21
+#define DIRPIN_6 23
+
+#define ENPIN 22
+
+#define stepRev 1600
 
 const char* ssid = "TP-LINK_A3B2AE";
 const char* password = "tplink2017";
 const int   UDP_PORT = 12345;
+
+//TODO: make the TCA9548 I2C Multiplexer address configurable
+Motor motors[6] = {
+    Motor(STEPPIN_1, DIRPIN_1, 1),
+    Motor(STEPPIN_2, DIRPIN_2, 2),
+    Motor(STEPPIN_3, DIRPIN_3, 3),
+    Motor(STEPPIN_4, DIRPIN_4, 4),
+    Motor(STEPPIN_5, DIRPIN_5, 5),
+    Motor(STEPPIN_6, DIRPIN_6, 6)
+};
 
 WiFiUDP udp;
 uint8_t   buf[64];
@@ -31,6 +68,18 @@ int64_t be64toh_signed(uint8_t* bytes) {
         ((uint64_t)bytes[7]);
     return (int64_t)result;
 }
+
+void updateMotorTask(void* arg) {
+  while (true) {
+    for (auto &motor : motors) {
+      motor.update();
+      // Yield in between updates to let other tasks run
+      vTaskDelay(pdMS_TO_TICKS(1));
+    }
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+}
+
 void ParsePacketTask(void* arg) {
   Serial.println("ParsePacketTask started");
 
@@ -101,7 +150,11 @@ void ParsePacketTask(void* arg) {
           
           // Set target angles for each motor
           Serial.println("Setting target angles");
-          sendSPI(speeds, angles);
+          for (int i = 0; i < 6; i++) {
+            if (motors[i].stepPin != 0 && motors[i].dirPin != 0) {
+              motors[i].setTargetAngle(angles[i]);
+            }
+          }
           Serial.println("Done setting target angles");
         }
         else {
@@ -116,42 +169,39 @@ void ParsePacketTask(void* arg) {
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
-size_t sendSPI(float speed[], float angle[]) {
+void sendSPI(float speed[], float angle[]) {
   size_t len = 0;
-  uint8_t buffer[64];
+  uint8_t buf[64];
   buf[len++] = 0xAA; // Start byte
-  buf[len++] = 6 * sizeof(float) + 6 * sizeof(float); // Length byte
+  buf[len++] = sizeof(speed) + sizeof(angle); // Length byte
   buf[len++] = 0x01; // Command byte
 
-  memcpy(buffer + len, &angle, 6* sizeof(float));
-  len += sizeof(float) * 6;
-  memcpy(buffer + len, &speed, 6* sizeof(float));
-  len += sizeof(float) * 6;
+  memcpy(buf + len, &angle, sizeof(speed));
+  len += sizeof(angle);
+  memcpy(buf + len, &speed, sizeof(angle));
+  len += sizeof(speed);
 
   size_t checksum = 0;
   for (size_t i = 0; i < len; i++) {
-    checksum += buffer[i];
+    checksum += buf[i];
   }
-  buffer[len++] = checksum; // Checksum byte
+  buf[len++] = checksum; // Checksum byte
 
   digitalWrite(SS, LOW);
   for (size_t i = 0; i < len; i++) {
-    SPI.transfer(buffer[i]);
+    SPI.transfer(buf[i]);
   }
   digitalWrite(SS, HIGH);
   Serial.println("SPI data sent");
-  return len;
 }
 
 
 void setup() {
   Serial.begin(115200);
-  SPI.begin();
   delay(1000); // Give serial time to initialize
   Serial.println("\n\nESP32 Starting up...");
-
-  pinMode(SS, OUTPUT);
-  digitalWrite(SS, HIGH); // Set SS pin high
+  pinMode(ENPIN, OUTPUT);
+  digitalWrite(ENPIN, HIGH); // Enable motor driver
 
   // Initialize WiFi with timeout
   Serial.printf("Connecting to WiFi network: %s\n", ssid);
@@ -173,7 +223,28 @@ void setup() {
   else {
     Serial.println("\nWiFi connection failed! Continuing without network...");
   }
-
+  
+  // Initialize motors with error checking
+  Serial.println("Initializing motors...");
+  for (int i = 0; i < 6; i++) {
+    Serial.printf("Initializing Motor %d (pins: step=%d, dir=%d)...\n",
+                  i+1, motors[i].stepPin, motors[i].dirPin);
+    motors[i].begin();
+    Serial.printf("Motor %s initialized successfully\n", motors[i].name.c_str());
+  }
+  
+  // Create motor update task on core 0 with higher priority
+  Serial.println("Creating motor update task...");
+  xTaskCreatePinnedToCore(
+    updateMotorTask,     // Task function
+    "UpdateMotor",       // Name of task
+    4096,               // Stack size in bytes
+    NULL,                // Task input parameter
+    2,                   // Priority
+    &updateMotorTaskHandle, // Task handle
+    1                    // Core 0
+  );
+  
   // Create packet parsing task on core 1
   Serial.println("Creating packet parsing task...");
   xTaskCreatePinnedToCore(

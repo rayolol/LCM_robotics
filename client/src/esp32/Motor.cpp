@@ -15,7 +15,7 @@ Motor::Motor(int stepPin, int dirPin, int motorNumber, int enablePin, int stepPe
       pid(&input, &output, &setpoint, 0.1, 0.01, 0.1, DIRECT)
 {
     name = "Motor" + std::to_string(motorNumber);
-    stepPerDegreeRatio = (1 / stepPerRev) * 360; // Calculate steps per degree
+    stepPerDegreeRatio = 360/stepPerRev; // Calculate steps per degree
 }
 
 void Motor::begin() {
@@ -101,14 +101,14 @@ void Motor::setTargetAngle(int angle) {
         Serial.printf("Motor %s: Setting target angle to %d degrees\n", name.c_str(), angle);
 
         setpoint = angle;
-        long steps = (long)(angle / 360.0 * stepPerRev); // Calculate steps based on stepPerRev
+        long steps = (long)(angle * stepPerDegreeRatio); // Calculate steps based on stepPerRev
 
         Serial.printf("Motor %s: Target steps = %ld\n", name.c_str(), steps);
 
         if (hasEncoder) {
             stepper.moveTo(steps); // Move to the target angle in steps
         } else {
-            stepper.moveTo(angle); // Move to the target angle directly
+            stepper.moveTo(steps); // Move to the target angle directly
         }
     } catch (...) {
         Serial.printf("Motor %s: Error in setTargetAngle()\n", name.c_str());
@@ -119,6 +119,6 @@ double Motor::getCurrentAngle() {
     if (hasEncoder) {
         return readEncoderAngle(); // Return the encoder angle
     } else {
-        return stepper.currentPosition() / 1600.0 * 360.0; // Convert steps to degrees
+        return stepper.currentPosition() / this->stepPerRev * 360.0; // Convert steps to degrees
     }
 }
